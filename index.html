@@ -1062,7 +1062,7 @@
       medication: med?.name || medId,
       generic: med?.generic || '',
       doseNumber: doseIndex + 1,
-      action: 'edited (was ' + oldDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ')',
+      action: 'taken',
       timestamp: newDate.toISOString()
     });
 
