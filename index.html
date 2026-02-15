@@ -821,6 +821,21 @@
     { id: 'hydroseal_check', label: 'Check Hydroseal dressings are in place', sub: 'Will be removed in clinic - do not peel off' },
   ];
 
+  // ===== GOOGLE SHEETS BACKUP =====
+  const SHEET_URL = 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+
+  function logToSheet(type, data) {
+    if (!SHEET_URL || SHEET_URL === 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') return;
+    try {
+      fetch(SHEET_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ type, data })
+      }).catch(() => {}); // silently fail if offline
+    } catch (e) { /* ignore */ }
+  }
+
   // ===== STATE =====
   let viewDate = new Date();
   viewDate.setHours(0, 0, 0, 0);
@@ -963,16 +978,33 @@
   function takeDose(id) {
     const data = getData('meds');
     if (!data[id]) data[id] = [];
-    data[id].push(new Date().toISOString());
+    const now = new Date().toISOString();
+    data[id].push(now);
     setData('meds', data);
+    const med = MEDICATIONS.find(m => m.id === id);
+    logToSheet('Medications', {
+      medication: med?.name || id,
+      generic: med?.generic || '',
+      doseNumber: data[id].length,
+      action: 'taken',
+      timestamp: now
+    });
     renderMeds();
   }
 
   function undoLastDose(id) {
     const data = getData('meds');
     if (data[id] && data[id].length > 0) {
-      data[id].pop();
+      const removed = data[id].pop();
       if (data[id].length === 0) delete data[id];
+      const med = MEDICATIONS.find(m => m.id === id);
+      logToSheet('Medications', {
+        medication: med?.name || id,
+        generic: med?.generic || '',
+        doseNumber: (data[id]?.length || 0) + 1,
+        action: 'undone',
+        timestamp: removed
+      });
     }
     setData('meds', data);
     renderMeds();
@@ -1025,6 +1057,15 @@
     doses.sort((a, b) => new Date(a) - new Date(b));
     setData('meds', data);
 
+    const med = MEDICATIONS.find(m => m.id === medId);
+    logToSheet('Medications', {
+      medication: med?.name || medId,
+      generic: med?.generic || '',
+      doseNumber: doseIndex + 1,
+      action: 'edited (was ' + oldDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ')',
+      timestamp: newDate.toISOString()
+    });
+
     // Remove overlay
     document.querySelector('div[style*="z-index:10000"]')?.remove();
     renderMeds();
@@ -1067,6 +1108,11 @@
     data[id] = !data[id];
     if (!data[id]) delete data[id];
     setData('wound', data);
+    const item = WOUND_CHECKS.find(w => w.id === id);
+    logToSheet('Wound Care', {
+      item: item?.label || id,
+      status: data[id] ? 'checked' : 'unchecked'
+    });
     renderWound();
   }
 
@@ -1084,6 +1130,10 @@
       right: right || '0'
     });
     setData('drain', data);
+    logToSheet('Drain Output', {
+      left: left || '0',
+      right: right || '0'
+    });
     document.getElementById('drainLeft').value = '';
     document.getElementById('drainRight').value = '';
     renderDrainHistory();
@@ -1113,6 +1163,7 @@
     const data = getData('spiro');
     const count = Math.max(0, (data.count || 0) + delta);
     setData('spiro', { count });
+    logToSheet('Breathing Exercises', { count });
     renderSpiro();
   }
 
@@ -1127,6 +1178,10 @@
       value: val
     });
     setData('temp', data);
+    logToSheet('Temperature', {
+      reading: val,
+      status: val > 101 ? 'HIGH - Call Doctor' : 'Normal'
+    });
     document.getElementById('tempInput').value = '';
     renderTempHistory();
     updateTempStatus();
@@ -1205,8 +1260,15 @@
     const data = getData('notes');
     document.getElementById('notesArea').value = data.text || '';
   }
+  // Debounce notes so we don't spam the sheet on every keystroke
+  let notesTimeout = null;
   function saveNotes() {
-    setData('notes', { text: document.getElementById('notesArea').value });
+    const text = document.getElementById('notesArea').value;
+    setData('notes', { text });
+    clearTimeout(notesTimeout);
+    notesTimeout = setTimeout(() => {
+      if (text.trim()) logToSheet('Notes', { note: text });
+    }, 3000); // wait 3 seconds after typing stops
   }
 
   // ===== QUESTIONS FOR FOLLOW-UP =====
@@ -1248,14 +1310,17 @@
     const questions = getQuestions();
     questions.push(text);
     saveQuestions(questions);
+    logToSheet('Questions', { question: text, action: 'added' });
     input.value = '';
     renderQuestions();
   }
 
   function deleteQuestion(index) {
     const questions = getQuestions();
+    const removed = questions[index];
     questions.splice(index, 1);
     saveQuestions(questions);
+    logToSheet('Questions', { question: removed, action: 'deleted' });
     renderQuestions();
   }
 
