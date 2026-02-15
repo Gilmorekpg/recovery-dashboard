@@ -615,79 +615,11 @@
   /* Completed section styling */
   .section-complete .section-header { background: var(--success-light); }
 
-  /* Lock Screen */
-  .lock-screen {
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(135deg, var(--primary), #7C6DD8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }
-  .lock-box {
-    background: white;
-    border-radius: 16px;
-    padding: 32px 28px;
-    width: 90%;
-    max-width: 340px;
-    text-align: center;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-  }
-  .lock-icon { font-size: 48px; margin-bottom: 12px; }
-  .lock-box h2 { font-size: 20px; margin-bottom: 4px; color: var(--text); }
-  .lock-box p { font-size: 13px; color: var(--text-light); margin-bottom: 20px; }
-  .lock-input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    font-size: 16px;
-    font-family: inherit;
-    text-align: center;
-    margin-bottom: 12px;
-  }
-  .lock-input:focus { outline: none; border-color: var(--primary); }
-  .lock-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 17px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    min-height: 50px;
-    transition: transform 0.1s;
-  }
-  .lock-btn:active { transform: scale(0.97); }
-  .lock-error {
-    color: var(--danger);
-    font-size: 13px;
-    margin-top: 10px;
-    display: none;
-  }
-  .app-content { display: none; }
-  .app-content.unlocked { display: block; }
 </style>
 </head>
 <body>
 
-<!-- Lock Screen -->
-<div class="lock-screen" id="lockScreen">
-  <div class="lock-box">
-    <div class="lock-icon">&#128274;</div>
-    <h2>Recovery Dashboard</h2>
-    <p>Enter password to continue</p>
-    <input type="password" class="lock-input" id="lockPassword" placeholder="Password" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')unlockDashboard()">
-    <button class="lock-btn" onclick="unlockDashboard()">Unlock</button>
-    <div class="lock-error" id="lockError">Incorrect password. Please try again.</div>
-  </div>
-</div>
-
-<div class="app-content" id="appContent">
+<div id="appContent">
 
 <div class="header" id="header">
   <h1>Recovery Dashboard</h1>
@@ -1313,50 +1245,6 @@
 
 </div><!-- end app-content -->
 
-<script>
-  // ===== PASSWORD GATE =====
-  // SHA-256 hash of the password so plaintext isn't in source
-  const PASSWORD_HASH = '1ec88ebe59df73cbcccb480819fa6ee2fd657e22c6ea4b4c8566dec7ff895625';
-
-  async function hashPassword(pw) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(pw);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  async function unlockDashboard() {
-    const input = document.getElementById('lockPassword');
-    const error = document.getElementById('lockError');
-    const pw = input.value.trim();
-
-    const hash = await hashPassword(pw);
-    if (hash === PASSWORD_HASH) {
-      document.getElementById('lockScreen').style.display = 'none';
-      document.getElementById('appContent').classList.add('unlocked');
-      // Store unlock expiry 30 days from now
-      const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      localStorage.setItem('recovery_unlocked', expiry);
-      error.style.display = 'none';
-    } else {
-      error.style.display = 'block';
-      input.value = '';
-      input.focus();
-    }
-  }
-
-  // Check if already unlocked (within 30-day window)
-  const unlockExpiry = localStorage.getItem('recovery_unlocked');
-  if (unlockExpiry && new Date(unlockExpiry) > new Date()) {
-    document.getElementById('lockScreen').style.display = 'none';
-    document.getElementById('appContent').classList.add('unlocked');
-  } else {
-    // Clear expired token if present
-    if (unlockExpiry) localStorage.removeItem('recovery_unlocked');
-    document.getElementById('lockPassword').focus();
-  }
-</script>
 
 </body>
 </html>
