@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recovery">
+<meta name="theme-color" content="#5B6ABF">
+<link rel="manifest" href="manifest.json">
+<title>Recovery Dashboard</title>
+<style>
+  :root {
+    --primary: #5B6ABF;
+    --primary-light: #E8EAFC;
+    --success: #27AE60;
+    --success-light: #E8F8F0;
+    --warning: #F39C12;
+    --warning-light: #FEF5E7;
+    --danger: #E74C3C;
+    --danger-light: #FDEDEC;
+    --bg: #F4F6FB;
+    --card: #FFFFFF;
+    --text: #2C3E50;
+    --text-light: #7F8C8D;
+    --border: #E0E4ED;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding-bottom: 100px;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--primary), #7C6DD8);
+    color: white;
+    padding: 20px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .header-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .stat-badge {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+  }
+  .stat-badge.urgent {
+    background: rgba(231,76,60,0.3);
+    border: 1px solid rgba(231,76,60,0.5);
+  }
+
+  /* Date Navigation */
+  .date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .date-nav button {
+    background: var(--primary-light);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .date-nav button:disabled { opacity: 0.3; cursor: default; }
+  .date-nav .current-date { font-size: 15px; font-weight: 600; min-width: 180px; text-align: center; }
+
+  /* Section */
+  .section {
+    margin: 12px;
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-header .progress {
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+  .section-body { padding: 0 16px 16px; }
+
+  /* Emergency Banner */
+  .emergency {
+    margin: 12px;
+    background: var(--danger-light);
+    border: 2px solid var(--danger);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .emergency h3 {
+    color: var(--danger);
+    font-size: 14px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .emergency .signs {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .emergency .signs span { display: inline-block; margin-right: 8px; }
+  .emergency a {
+    display: inline-block;
+    background: var(--danger);
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    margin-right: 8px;
+    margin-top: 4px;
+  }
+  .emergency .non-urgent {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 8px;
+  }
+
+  /* Medication Row */
+  .med-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .med-item:last-child { border-bottom: none; }
+  .med-top-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .med-info { flex: 1; min-width: 0; }
+  .med-name { font-weight: 600; font-size: 14px; }
+  .med-detail { font-size: 12px; color: var(--text-light); }
+  .med-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .med-tag.pain { background: #FDEBD0; color: #E67E22; }
+  .med-tag.antibiotic { background: #D5F5E3; color: #27AE60; }
+  .med-tag.nausea { background: #D6EAF8; color: #2980B9; }
+  .med-tag.blood { background: #FADBD8; color: #E74C3C; }
+  .med-tag.muscle { background: #E8DAEF; color: #8E44AD; }
+  .med-tag.stool { background: #FCF3CF; color: #B7950B; }
+  .med-needed {
+    font-size: 11px;
+    color: var(--text-light);
+    font-style: italic;
+  }
+  .med-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-left: 2px;
+    flex-wrap: wrap;
+  }
+  .med-dose-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .med-dose-btn:disabled {
+    background: var(--border);
+    color: var(--text-light);
+    cursor: default;
+  }
+  .med-dose-btn.ready {
+    background: var(--success);
+    animation: pulse-green 2s infinite;
+  }
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(39,174,96,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(39,174,96,0); }
+  }
+  .med-next-dose {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .med-next-dose.waiting { color: var(--warning); }
+  .med-next-dose.ready { color: var(--success); }
+  .med-dose-log {
+    margin-top: 8px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .med-dose-log-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .med-dose-log-empty {
+    font-size: 13px;
+    color: var(--text-light);
+    font-style: italic;
+  }
+  .med-dose-log-entries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .med-dose-pill {
+    background: var(--success-light);
+    color: var(--success);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .med-dose-pill .dose-num {
+    background: var(--success);
+    color: white;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .med-undo {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+    margin-left: 4px;
+  }
+  .med-undo:hover { color: var(--danger); }
+
+  /* Checklist */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    background: white;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+  .check-box.checked {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+  }
+  .check-label { font-size: 14px; }
+  .check-label.done { text-decoration: line-through; color: var(--text-light); }
+  .check-sub { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+  /* Drain Log */
+  .drain-log {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .drain-input-group {
+    flex: 1;
+    min-width: 120px;
+  }
+  .drain-input-group label {
+    font-size: 13px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .drain-input-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    text-align: center;
+  }
+  .drain-input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .drain-unit { font-size: 12px; color: var(--text-light); text-align: center; margin-top: 4px; }
+  .drain-history { margin-top: 12px; }
+  .drain-history h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .drain-history-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Spirometer Tracker */
+  .spiro-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+  .spiro-count {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 50px;
+    text-align: center;
+  }
+  .spiro-label { font-size: 13px; color: var(--text-light); text-align: center; }
+  .spiro-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .spiro-btn.add { background: var(--success); color: white; }
+  .spiro-btn.sub { background: var(--danger-light); color: var(--danger); }
+
+  /* Temp Input */
+  .temp-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .temp-input {
+    width: 100px;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 18px;
+    font-family: inherit;
+    text-align: center;
+  }
+  .temp-input:focus { outline: none; border-color: var(--primary); }
+  .temp-status {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .temp-ok { background: var(--success-light); color: var(--success); }
+  .temp-warn { background: var(--danger-light); color: var(--danger); }
+  .temp-save-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Notes */
+  .notes-area {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .notes-area:focus { outline: none; border-color: var(--primary); }
+
+  /* Appointment */
+  .appt-card {
+    background: var(--primary-light);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .appt-icon { font-size: 28px; }
+  .appt-info h3 { font-size: 15px; font-weight: 700; color: var(--primary); }
+  .appt-info p { font-size: 13px; color: var(--text-light); }
+
+  /* Activity reminders */
+  .reminder-card {
+    background: var(--warning-light);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .reminder-card:last-child { margin-bottom: 0; }
+  .reminder-card strong { color: var(--warning); }
+  .reminder-card.info {
+    background: var(--primary-light);
+  }
+  .reminder-card.info strong { color: var(--primary); }
+
+  /* Questions for Doctor */
+  .q-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .q-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .q-input:focus { outline: none; border-color: var(--primary); }
+  .q-add-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .q-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .q-item:last-child { border-bottom: none; }
+  .q-number {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .q-text { flex: 1; font-size: 14px; }
+  .q-delete {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .q-delete:hover { background: var(--danger-light); color: var(--danger); }
+  .q-empty {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 13px;
+    padding: 12px 0;
+  }
+
+  /* Reset button */
+  .reset-section {
+    text-align: center;
+    padding: 20px 16px;
+  }
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Collapse animation */
+  .collapsible { overflow: hidden; transition: max-height 0.3s ease; }
+  .collapsed .collapsible { max-height: 0 !important; padding: 0 16px !important; }
+  .chevron { transition: transform 0.3s; font-size: 14px; color: var(--text-light); }
+  .collapsed .chevron { transform: rotate(-90deg); }
+
+  /* Completed section styling */
+  .section-complete .section-header { background: var(--success-light); }
+</style>
+</head>
+<body>
+
+<div class="header" id="header">
+  <h1>Recovery Dashboard</h1>
+  <div class="header-stats">
+    <span class="stat-badge" id="daySinceSurgery"></span>
+    <span class="stat-badge" id="daysToAppt"></span>
+    <span class="stat-badge" id="showerStatus"></span>
+  </div>
+</div>
+
+<div class="date-nav">
+  <button id="prevDay" onclick="changeDay(-1)">&lt;</button>
+  <div class="current-date" id="currentDate"></div>
+  <button id="nextDay" onclick="changeDay(1)">&gt;</button>
+</div>
+
+<!-- Emergency Section -->
+<div class="emergency">
+  <h3>&#9888;&#65039; When to Call the Doctor</h3>
+  <div class="signs">
+    <span>&#8226; Sudden swelling/pain</span>
+    <span>&#8226; Fever &gt; 101&deg;F</span>
+    <span>&#8226; Drainage from incisions</span>
+    <span>&#8226; Difficulty breathing</span>
+    <span>&#8226; Redness at surgical site</span>
+  </div>
+  <a href="tel:4079171376">Urgent Line: (407) 917-1376</a>
+  <a href="tel:911" style="background:#333">Call 911</a>
+  <div class="non-urgent">
+    Non-urgent: <a href="mailto:postOPP@OppMD.com" style="background:none;color:var(--primary);padding:0;font-size:12px">postOPP@OppMD.com</a> | <a href="tel:4073777714" style="background:none;color:var(--primary);padding:0;font-size:12px">(407) 377-7714</a>
+  </div>
+</div>
+
+<!-- Appointment -->
+<div class="section">
+  <div class="appt-card">
+    <div class="appt-icon">&#128197;</div>
+    <div class="appt-info">
+      <h3>Follow-up: Thursday, Feb 19 at 2:00 PM</h3>
+      <p>Dr. Adam J. Oppenheimer</p>
+    </div>
+  </div>
+</div>
+
+<!-- Temperature Check -->
+<div class="section" id="tempSection">
+  <div class="section-header" onclick="toggleSection('tempSection')">
+    <h2>&#127777;&#65039; Temperature Check</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible">
+    <div class="temp-row">
+      <input type="number" class="temp-input" id="tempInput" placeholder="98.6" step="0.1" min="95" max="110">
+      <span style="font-size:14px;color:var(--text-light)">&deg;F</span>
+      <span class="temp-status" id="tempStatus"></span>
+    </div>
+    <div style="margin-top:8px">
+      <button class="temp-save-btn" onclick="saveTemp()">Log Temperature</button>
+    </div>
+    <div id="tempHistory" style="margin-top:10px;font-size:13px;color:var(--text-light)"></div>
+  </div>
+</div>
+
+<!-- Medications -->
+<div class="section" id="medSection">
+  <div class="section-header" onclick="toggleSection('medSection')">
+    <h2>&#128138; Medications</h2>
+    <span class="progress" id="medProgress"></span>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible" id="medList"></div>
+</div>
+
+<!-- Daily Wound Care -->
+<div class="section" id="woundSection">
+  <div class="section-header" onclick="toggleSection('woundSection')">
+    <h2>&#129657; Wound & Drain Care</h2>
+    <span class="progress" id="woundProgress"></span>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible" id="woundList"></div>
+</div>
+
+<!-- Drain Output Log -->
+<div class="section" id="drainSection">
+  <div class="section-header" onclick="toggleSection('drainSection')">
+    <h2>&#128203; Drain Output Log</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible">
+    <div class="drain-log">
+      <div class="drain-input-group">
+        <label>Left Drain</label>
+        <input type="number" id="drainLeft" placeholder="0" min="0" step="1">
+        <div class="drain-unit">mL</div>
+      </div>
+      <div class="drain-input-group">
+        <label>Right Drain</label>
+        <input type="number" id="drainRight" placeholder="0" min="0" step="1">
+        <div class="drain-unit">mL</div>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <button class="temp-save-btn" onclick="saveDrain()">Log Drain Output</button>
+    </div>
+    <div class="reminder-card info" style="margin-top:10px">
+      <strong>Reminder:</strong> Strip drains and keep bulbs compressed.
+    </div>
+    <div class="drain-history" id="drainHistory"></div>
+  </div>
+</div>
+
+<!-- Respiratory -->
+<div class="section" id="respSection">
+  <div class="section-header" onclick="toggleSection('respSection')">
+    <h2>&#129729; Breathing Exercises</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible">
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:8px">Cough &amp; deep breathe once per hour while awake. Use incentive spirometer.</p>
+    <div class="spiro-counter">
+      <button class="spiro-btn sub" onclick="adjustSpiro(-1)">-</button>
+      <div>
+        <div class="spiro-count" id="spiroCount">0</div>
+        <div class="spiro-label">sessions today</div>
+      </div>
+      <button class="spiro-btn add" onclick="adjustSpiro(1)">+</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-light);text-align:center">Tip: Apply gentle pressure to the treated area when coughing.</p>
+  </div>
+</div>
+
+<!-- Activity & Reminders -->
+<div class="section" id="activitySection">
+  <div class="section-header" onclick="toggleSection('activitySection')">
+    <h2>&#128161; Activity Reminders</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible" id="activityReminders"></div>
+</div>
+
+<!-- Questions for Follow-up -->
+<div class="section" id="questionsSection">
+  <div class="section-header" onclick="toggleSection('questionsSection')">
+    <h2>&#9997;&#65039; Questions for Follow-up</h2>
+    <span class="progress" id="questionsCount"></span>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible">
+    <p style="font-size:12px;color:var(--text-light);margin-bottom:10px">Jot down non-urgent questions to ask Dr. Oppenheimer at your Feb 19 appointment.</p>
+    <div class="q-input-row">
+      <input type="text" class="q-input" id="questionInput" placeholder="Type a question..." onkeydown="if(event.key==='Enter')addQuestion()">
+      <button class="q-add-btn" onclick="addQuestion()">Add</button>
+    </div>
+    <div id="questionsList"></div>
+  </div>
+</div>
+
+<!-- Notes -->
+<div class="section" id="notesSection">
+  <div class="section-header" onclick="toggleSection('notesSection')">
+    <h2>&#128221; Notes</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="section-body collapsible">
+    <textarea class="notes-area" id="notesArea" placeholder="Add any notes for today..." oninput="saveNotes()"></textarea>
+  </div>
+</div>
+
+<div class="reset-section">
+  <button class="reset-btn" onclick="resetDay()">Reset Today's Entries</button>
+</div>
+
+<script>
+  // ===== CONFIG =====
+  const SURGERY_DATE = new Date(2026, 1, 12); // Feb 12, 2026
+  const APPT_DATE = new Date(2026, 1, 19, 14, 0); // Feb 19, 2026 2:00 PM
+
+  const MEDICATIONS = [
+    { id: 'tylenol', name: 'Tylenol', generic: 'acetaminophen', purpose: 'Pain', freq: 'Every 6 hours', intervalHrs: 6, tag: 'pain', asNeeded: true, withFood: false },
+    { id: 'robaxin', name: 'Robaxin', generic: 'methocarbamol', purpose: 'Muscle Relaxant', freq: 'Every 6 hours', intervalHrs: 6, tag: 'muscle', asNeeded: true, withFood: false },
+    { id: 'ultram', name: 'Ultram', generic: 'tramadol', purpose: 'Pain', freq: 'Every 4-6 hours', intervalHrs: 4, tag: 'pain', asNeeded: true, withFood: true },
+    { id: 'keflex', name: 'Keflex', generic: 'cephalexin', purpose: 'Antibiotic', freq: 'Every 8 hours', intervalHrs: 8, tag: 'antibiotic', asNeeded: false, withFood: true },
+    { id: 'zofran', name: 'Zofran', generic: 'ondansetron', purpose: 'Nausea', freq: 'Every 6 hours', intervalHrs: 6, tag: 'nausea', asNeeded: true, withFood: false },
+    { id: 'colace', name: 'Colace', generic: 'docusate', purpose: 'Stool Softener', freq: 'Every 6 hours', intervalHrs: 6, tag: 'stool', asNeeded: true, withFood: false },
+    { id: 'aspirin', name: 'Aspirin', generic: 'acetylsalicylic acid', purpose: 'Blood Thinner', freq: 'Twice daily', intervalHrs: 12, tag: 'blood', asNeeded: false, withFood: false },
+  ];
+
+  const WOUND_CHECKS = [
+    { id: 'belly_clean', label: 'Cleanse belly button with Q-tip', sub: 'Use gentle circular motions' },
+    { id: 'belly_aquaphor', label: 'Apply Aquaphor to belly button', sub: '' },
+    { id: 'binder_adjust', label: 'Release & readjust abdominal binder', sub: 'Do this several times a day to prevent blistering' },
+    { id: 'drain_strip', label: 'Strip drains & record output', sub: 'Keep bulbs compressed' },
+    { id: 'check_incisions', label: 'Check incisions for redness/drainage', sub: 'Report anything unusual to doctor' },
+    { id: 'hydroseal_check', label: 'Check Hydroseal dressings are in place', sub: 'Will be removed in clinic - do not peel off' },
+  ];
+
+  // ===== STATE =====
+  let viewDate = new Date();
+  viewDate.setHours(0, 0, 0, 0);
+
+  function dateKey(d) {
+    const dt = d || viewDate;
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+
+  function getData(key) {
+    try { return JSON.parse(localStorage.getItem(`recovery_${key}_${dateKey()}`)) || {}; } catch { return {}; }
+  }
+  function setData(key, val) {
+    localStorage.setItem(`recovery_${key}_${dateKey()}`, JSON.stringify(val));
+  }
+
+  // ===== HEADER =====
+  function updateHeader() {
+    const now = new Date();
+    const surgDay = Math.floor((now - SURGERY_DATE) / 86400000);
+    const apptDays = Math.ceil((APPT_DATE - now) / 86400000);
+    const hoursSinceSurgery = Math.floor((now - SURGERY_DATE) / 3600000);
+    const canShower = hoursSinceSurgery >= 48;
+
+    document.getElementById('daySinceSurgery').textContent = `Day ${Math.max(0, surgDay)} Post-Op`;
+    if (apptDays > 0) {
+      document.getElementById('daysToAppt').textContent = `Follow-up in ${apptDays} day${apptDays !== 1 ? 's' : ''}`;
+    } else if (apptDays === 0) {
+      document.getElementById('daysToAppt').textContent = `Follow-up TODAY`;
+      document.getElementById('daysToAppt').classList.add('urgent');
+    } else {
+      document.getElementById('daysToAppt').textContent = `Follow-up completed`;
+    }
+    document.getElementById('showerStatus').textContent = canShower ? 'Showers OK (use chair + Hibiclens)' : `Showers in ${48 - hoursSinceSurgery}h`;
+  }
+
+  // ===== DATE NAV =====
+  function updateDateNav() {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const opts = { weekday: 'long', month: 'short', day: 'numeric' };
+    const label = viewDate.toLocaleDateString('en-US', opts);
+    const isToday = viewDate.getTime() === today.getTime();
+    document.getElementById('currentDate').textContent = isToday ? `Today - ${label}` : label;
+    document.getElementById('nextDay').disabled = viewDate >= today;
+    document.getElementById('prevDay').disabled = viewDate <= SURGERY_DATE;
+  }
+
+  function changeDay(delta) {
+    viewDate = new Date(viewDate.getTime() + delta * 86400000);
+    renderAll();
+  }
+
+  // ===== MEDICATIONS =====
+  // Migrate old med data format (string "2:15 PM") to new format (array of ISO timestamps)
+  function migrateMedData() {
+    const data = getData('meds');
+    let changed = false;
+    MEDICATIONS.forEach(med => {
+      const val = data[med.id];
+      if (val && typeof val === 'string') {
+        // Old format was a time string like "2:15 PM" - discard it since we can't recover an ISO timestamp
+        delete data[med.id];
+        changed = true;
+      }
+    });
+    if (changed) setData('meds', data);
+  }
+  migrateMedData();
+
+  function renderMeds() {
+    const data = getData('meds');
+    const container = document.getElementById('medList');
+    const now = new Date();
+    let html = '';
+    let totalDoses = 0;
+
+    MEDICATIONS.forEach(med => {
+      const raw = data[med.id];
+      const doses = Array.isArray(raw) ? raw : []; // ensure it's always an array
+      const lastDose = doses.length > 0 ? new Date(doses[doses.length - 1]) : null;
+      const nextDoseAt = lastDose ? new Date(lastDose.getTime() + med.intervalHrs * 3600000) : null;
+      const isReady = !lastDose || now >= nextDoseAt;
+      const foodStr = med.withFood ? ' &middot; take with food' : '';
+      const neededStr = med.asNeeded ? ' &middot; as needed' : '';
+
+      // Next dose status text
+      let nextDoseHtml = '';
+      if (lastDose && !isReady) {
+        const minsLeft = Math.ceil((nextDoseAt - now) / 60000);
+        const hrsLeft = Math.floor(minsLeft / 60);
+        const mLeft = minsLeft % 60;
+        const timeLabel = nextDoseAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const countdown = hrsLeft > 0 ? `${hrsLeft}h ${mLeft}m` : `${mLeft}m`;
+        nextDoseHtml = `<span class="med-next-dose waiting">Next dose at ${timeLabel} (${countdown})</span>`;
+      } else if (lastDose && isReady) {
+        nextDoseHtml = `<span class="med-next-dose ready">Ready for next dose</span>`;
+      }
+
+      // Dose log - always visible
+      totalDoses += doses.length;
+      let doseLogInner = '';
+      if (doses.length === 0) {
+        doseLogInner = '<div class="med-dose-log-empty">No doses taken today</div>';
+      } else {
+        const pills = doses.map((d, i) => {
+          const t = new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          return `<span class="med-dose-pill"><span class="dose-num">${i + 1}</span>${t}</span>`;
+        }).join('');
+        doseLogInner = `<div class="med-dose-log-entries">${pills}<button class="med-undo" onclick="undoLastDose('${med.id}')">undo last</button></div>`;
+      }
+
+      html += `
+        <div class="med-item">
+          <div class="med-top-row">
+            <div class="med-info">
+              <div class="med-name">${med.name} <span style="font-weight:400;color:var(--text-light);font-size:12px">(${med.generic})</span></div>
+              <div class="med-detail">${med.freq}${foodStr}${neededStr}</div>
+            </div>
+            <span class="med-tag ${med.tag}">${med.purpose}</span>
+          </div>
+          <div class="med-status-row">
+            <button class="med-dose-btn ${isReady ? 'ready' : ''}" onclick="takeDose('${med.id}')" ${!isReady ? 'disabled' : ''}>
+              ${isReady ? (doses.length === 0 ? 'Take First Dose' : 'Take Next Dose') : 'Waiting'}
+            </button>
+            ${nextDoseHtml}
+          </div>
+          <div class="med-dose-log">
+            <div class="med-dose-log-header">Doses Today</div>
+            ${doseLogInner}
+          </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+    document.getElementById('medProgress').textContent = `${totalDoses} dose${totalDoses !== 1 ? 's' : ''} today`;
+    // Remove section-complete logic since meds cycle through the day
+    document.getElementById('medSection').classList.remove('section-complete');
+  }
+
+  function takeDose(id) {
+    const data = getData('meds');
+    if (!data[id]) data[id] = [];
+    data[id].push(new Date().toISOString());
+    setData('meds', data);
+    renderMeds();
+  }
+
+  function undoLastDose(id) {
+    const data = getData('meds');
+    if (data[id] && data[id].length > 0) {
+      data[id].pop();
+      if (data[id].length === 0) delete data[id];
+    }
+    setData('meds', data);
+    renderMeds();
+  }
+
+  // Refresh med countdowns every 30 seconds
+  setInterval(renderMeds, 30000);
+
+  // ===== WOUND CARE =====
+  function renderWound() {
+    const data = getData('wound');
+    const container = document.getElementById('woundList');
+    let html = '';
+    let done = 0;
+
+    WOUND_CHECKS.forEach(item => {
+      const checked = data[item.id];
+      if (checked) done++;
+      html += `
+        <div class="check-item">
+          <div class="check-box ${checked ? 'checked' : ''}" onclick="toggleWound('${item.id}')">
+            ${checked ? '&#10003;' : ''}
+          </div>
+          <div>
+            <div class="check-label ${checked ? 'done' : ''}">${item.label}</div>
+            ${item.sub ? `<div class="check-sub">${item.sub}</div>` : ''}
+          </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+    document.getElementById('woundProgress').textContent = `${done}/${WOUND_CHECKS.length}`;
+    const sec = document.getElementById('woundSection');
+    if (done === WOUND_CHECKS.length) sec.classList.add('section-complete');
+    else sec.classList.remove('section-complete');
+  }
+
+  function toggleWound(id) {
+    const data = getData('wound');
+    data[id] = !data[id];
+    if (!data[id]) delete data[id];
+    setData('wound', data);
+    renderWound();
+  }
+
+  // ===== DRAIN OUTPUT =====
+  function saveDrain() {
+    const left = document.getElementById('drainLeft').value;
+    const right = document.getElementById('drainRight').value;
+    if (!left && !right) return;
+
+    const data = getData('drain');
+    if (!data.entries) data.entries = [];
+    data.entries.push({
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      left: left || '0',
+      right: right || '0'
+    });
+    setData('drain', data);
+    document.getElementById('drainLeft').value = '';
+    document.getElementById('drainRight').value = '';
+    renderDrainHistory();
+  }
+
+  function renderDrainHistory() {
+    const data = getData('drain');
+    const container = document.getElementById('drainHistory');
+    if (!data.entries || data.entries.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    let html = '<h4>Today\'s Entries</h4>';
+    data.entries.forEach(e => {
+      html += `<div class="drain-history-row"><span>${e.time}</span><span>L: ${e.left} mL | R: ${e.right} mL</span></div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  // ===== SPIROMETER =====
+  function renderSpiro() {
+    const data = getData('spiro');
+    document.getElementById('spiroCount').textContent = data.count || 0;
+  }
+
+  function adjustSpiro(delta) {
+    const data = getData('spiro');
+    const count = Math.max(0, (data.count || 0) + delta);
+    setData('spiro', { count });
+    renderSpiro();
+  }
+
+  // ===== TEMPERATURE =====
+  function saveTemp() {
+    const val = parseFloat(document.getElementById('tempInput').value);
+    if (!val || val < 90 || val > 115) return;
+    const data = getData('temp');
+    if (!data.entries) data.entries = [];
+    data.entries.push({
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      value: val
+    });
+    setData('temp', data);
+    document.getElementById('tempInput').value = '';
+    renderTempHistory();
+    updateTempStatus();
+  }
+
+  function updateTempStatus() {
+    const val = parseFloat(document.getElementById('tempInput').value);
+    const status = document.getElementById('tempStatus');
+    if (!val) { status.textContent = ''; return; }
+    if (val > 101) {
+      status.textContent = 'CALL DOCTOR';
+      status.className = 'temp-status temp-warn';
+    } else {
+      status.textContent = 'Normal';
+      status.className = 'temp-status temp-ok';
+    }
+  }
+
+  function renderTempHistory() {
+    const data = getData('temp');
+    const container = document.getElementById('tempHistory');
+    if (!data.entries || data.entries.length === 0) { container.innerHTML = ''; return; }
+    let html = '<strong style="font-size:12px">Today\'s readings:</strong> ';
+    html += data.entries.map(e => {
+      const cls = e.value > 101 ? 'color:var(--danger);font-weight:700' : '';
+      return `<span style="${cls}">${e.value}&deg;F (${e.time})</span>`;
+    }).join(', ');
+    container.innerHTML = html;
+  }
+
+  document.getElementById('tempInput').addEventListener('input', updateTempStatus);
+
+  // ===== ACTIVITY REMINDERS =====
+  function renderActivity() {
+    const container = document.getElementById('activityReminders');
+    const hoursSinceSurgery = Math.floor((new Date() - SURGERY_DATE) / 3600000);
+    const daysSinceSurgery = Math.floor((new Date() - SURGERY_DATE) / 86400000);
+
+    let html = '';
+
+    html += `<div class="reminder-card info">
+      <strong>Posture:</strong> Keep a slight bend to posture for the first week. Upright seated position is best when resting.
+    </div>`;
+
+    if (daysSinceSurgery < 1) {
+      html += `<div class="reminder-card">
+        <strong>Diet:</strong> Light food today (soups, crackers). Simple diet for the first evening.
+      </div>`;
+    }
+
+    if (hoursSinceSurgery < 24) {
+      html += `<div class="reminder-card" style="background:var(--danger-light)">
+        <strong style="color:var(--danger)">Anesthesia:</strong> Effects last 24 hours. No driving. Supervision required.
+      </div>`;
+    }
+
+    if (hoursSinceSurgery < 48) {
+      html += `<div class="reminder-card">
+        <strong>Showering:</strong> Wait until 48 hours post-surgery (${new Date(SURGERY_DATE.getTime() + 48*3600000).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}). Use Hibiclens soap and a chair.
+      </div>`;
+    } else {
+      html += `<div class="reminder-card info">
+        <strong>Showering:</strong> OK to shower. Use Hibiclens soap (orange tube) and sit in a chair. Remove gauze pads after first shower.
+      </div>`;
+    }
+
+    html += `<div class="reminder-card info">
+      <strong>All medications are safe to take together.</strong>
+    </div>`;
+
+    container.innerHTML = html;
+  }
+
+  // ===== NOTES =====
+  function renderNotes() {
+    const data = getData('notes');
+    document.getElementById('notesArea').value = data.text || '';
+  }
+  function saveNotes() {
+    setData('notes', { text: document.getElementById('notesArea').value });
+  }
+
+  // ===== QUESTIONS FOR FOLLOW-UP =====
+  // Questions are global (not per-day) so they accumulate across the recovery
+  function getQuestions() {
+    try { return JSON.parse(localStorage.getItem('recovery_questions')) || []; } catch { return []; }
+  }
+  function saveQuestions(questions) {
+    localStorage.setItem('recovery_questions', JSON.stringify(questions));
+  }
+
+  function renderQuestions() {
+    const questions = getQuestions();
+    const container = document.getElementById('questionsList');
+    const countEl = document.getElementById('questionsCount');
+    countEl.textContent = questions.length > 0 ? `${questions.length} question${questions.length !== 1 ? 's' : ''}` : '';
+
+    if (questions.length === 0) {
+      container.innerHTML = '<div class="q-empty">No questions yet. Add one above!</div>';
+      return;
+    }
+
+    let html = '';
+    questions.forEach((q, i) => {
+      html += `
+        <div class="q-item">
+          <div class="q-number">${i + 1}</div>
+          <div class="q-text">${escapeHtml(q)}</div>
+          <button class="q-delete" onclick="deleteQuestion(${i})" title="Remove question">&times;</button>
+        </div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  function addQuestion() {
+    const input = document.getElementById('questionInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const questions = getQuestions();
+    questions.push(text);
+    saveQuestions(questions);
+    input.value = '';
+    renderQuestions();
+  }
+
+  function deleteQuestion(index) {
+    const questions = getQuestions();
+    questions.splice(index, 1);
+    saveQuestions(questions);
+    renderQuestions();
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ===== COLLAPSE =====
+  function toggleSection(id) {
+    document.getElementById(id).classList.toggle('collapsed');
+  }
+
+  // ===== RESET =====
+  function resetDay() {
+    if (!confirm('Reset all entries for today? This cannot be undone.')) return;
+    const dk = dateKey();
+    const keys = Object.keys(localStorage).filter(k => k.endsWith(dk));
+    keys.forEach(k => localStorage.removeItem(k));
+    renderAll();
+  }
+
+  // ===== RENDER =====
+  function renderAll() {
+    updateHeader();
+    updateDateNav();
+    renderMeds();
+    renderWound();
+    renderDrainHistory();
+    renderSpiro();
+    renderTempHistory();
+    renderActivity();
+    renderNotes();
+    renderQuestions();
+  }
+
+  renderAll();
+
+  // Refresh header every minute
+  setInterval(updateHeader, 60000);
+</script>
+
+</body>
+</html>
