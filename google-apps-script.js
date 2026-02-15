@@ -46,7 +46,7 @@ function getHeaders(type) {
     case 'Temperature':
       return ['Date', 'Time', 'Reading (°F)', 'Status'];
     case 'Drain Output':
-      return ['Date', 'Time', 'Left (mL)', 'Right (mL)'];
+      return ['Date', 'Time', 'Left Bottom (mL)', 'Left Top (mL)', 'Right Side (mL)'];
     case 'Wound Care':
       return ['Date', 'Time', 'Item', 'Status'];
     case 'Breathing Exercises':
@@ -78,7 +78,7 @@ function buildRow(type, data) {
     case 'Temperature':
       return [date, time, data.reading || '', data.status || ''];
     case 'Drain Output':
-      return [date, time, data.left || '0', data.right || '0'];
+      return [date, time, data.leftBottom || '0', data.leftTop || '0', data.right || '0'];
     case 'Wound Care':
       return [date, time, data.item || '', data.status || ''];
     case 'Breathing Exercises':

@@ -716,12 +716,17 @@
   <div class="section-body collapsible">
     <div class="drain-log">
       <div class="drain-input-group">
-        <label>Left Drain</label>
-        <input type="number" id="drainLeft" placeholder="0" min="0" step="1">
+        <label>Left Bottom</label>
+        <input type="number" id="drainLeftBottom" placeholder="0" min="0" step="1">
         <div class="drain-unit">mL</div>
       </div>
       <div class="drain-input-group">
-        <label>Right Drain</label>
+        <label>Left Top</label>
+        <input type="number" id="drainLeftTop" placeholder="0" min="0" step="1">
+        <div class="drain-unit">mL</div>
+      </div>
+      <div class="drain-input-group">
+        <label>Right Side</label>
         <input type="number" id="drainRight" placeholder="0" min="0" step="1">
         <div class="drain-unit">mL</div>
       </div>
@@ -1106,23 +1111,27 @@
 
   // ===== DRAIN OUTPUT =====
   function saveDrain() {
-    const left = document.getElementById('drainLeft').value;
+    const leftBottom = document.getElementById('drainLeftBottom').value;
+    const leftTop = document.getElementById('drainLeftTop').value;
     const right = document.getElementById('drainRight').value;
-    if (!left && !right) return;
+    if (!leftBottom && !leftTop && !right) return;
 
     const data = getData('drain');
     if (!data.entries) data.entries = [];
     data.entries.push({
       time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      left: left || '0',
+      leftBottom: leftBottom || '0',
+      leftTop: leftTop || '0',
       right: right || '0'
     });
     setData('drain', data);
     logToSheet('Drain Output', {
-      left: left || '0',
+      leftBottom: leftBottom || '0',
+      leftTop: leftTop || '0',
       right: right || '0'
     });
-    document.getElementById('drainLeft').value = '';
+    document.getElementById('drainLeftBottom').value = '';
+    document.getElementById('drainLeftTop').value = '';
     document.getElementById('drainRight').value = '';
     renderDrainHistory();
   }
@@ -1136,7 +1145,12 @@
     }
     let html = '<h4>Today\'s Entries</h4>';
     data.entries.forEach(e => {
-      html += `<div class="drain-history-row"><span>${e.time}</span><span>L: ${e.left} mL | R: ${e.right} mL</span></div>`;
+      // Support old 2-drain format and new 3-drain format
+      if (e.leftBottom !== undefined) {
+        html += `<div class="drain-history-row"><span>${e.time}</span><span>LB: ${e.leftBottom} mL | LT: ${e.leftTop} mL | R: ${e.right} mL</span></div>`;
+      } else {
+        html += `<div class="drain-history-row"><span>${e.time}</span><span>L: ${e.left} mL | R: ${e.right} mL</span></div>`;
+      }
     });
     container.innerHTML = html;
   }
@@ -1360,7 +1374,11 @@
     const drainData = getData('drain');
     if (drainData.entries) {
       drainData.entries.forEach(e => {
-        queue.push({ type: 'Drain Output', data: { left: e.left, right: e.right }});
+        queue.push({ type: 'Drain Output', data: {
+          leftBottom: e.leftBottom || e.left || '0',
+          leftTop: e.leftTop || '0',
+          right: e.right || '0'
+        }});
       });
     }
 
