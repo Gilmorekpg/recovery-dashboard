@@ -681,7 +681,7 @@
     <div class="lock-icon">&#128274;</div>
     <h2>Recovery Dashboard</h2>
     <p>Enter password to continue</p>
-    <input type="password" class="lock-input" id="lockPassword" placeholder="Password" onkeydown="if(event.key==='Enter')unlockDashboard()">
+    <input type="password" class="lock-input" id="lockPassword" placeholder="Password" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')unlockDashboard()">
     <button class="lock-btn" onclick="unlockDashboard()">Unlock</button>
     <div class="lock-error" id="lockError">Incorrect password. Please try again.</div>
   </div>
@@ -1329,7 +1329,7 @@
   async function unlockDashboard() {
     const input = document.getElementById('lockPassword');
     const error = document.getElementById('lockError');
-    const pw = input.value;
+    const pw = input.value.trim();
 
     const hash = await hashPassword(pw);
     if (hash === PASSWORD_HASH) {
