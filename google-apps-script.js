@@ -42,7 +42,7 @@ function doPost(e) {
 function getHeaders(type) {
   switch (type) {
     case 'Medications':
-      return ['Date', 'Time', 'Medication', 'Generic', 'Dose #', 'Action'];
+      return ['Date', 'Time', 'Medication', 'Generic', 'Dose #'];
     case 'Temperature':
       return ['Date', 'Time', 'Reading (°F)', 'Status'];
     case 'Drain Output':
@@ -74,7 +74,7 @@ function buildRow(type, data) {
 
   switch (type) {
     case 'Medications':
-      return [date, time, data.medication || '', data.generic || '', data.doseNumber || '', data.action || 'taken'];
+      return [date, time, data.medication || '', data.generic || '', data.doseNumber || ''];
     case 'Temperature':
       return [date, time, data.reading || '', data.status || ''];
     case 'Drain Output':
@@ -92,22 +92,20 @@ function buildRow(type, data) {
   }
 }
 
-// Test function — run this to verify the script works
-function testDoPost() {
-  var testPayload = {
-    postData: {
-      contents: JSON.stringify({
-        type: 'Medications',
-        data: {
-          medication: 'Tylenol',
-          generic: 'acetaminophen',
-          doseNumber: 1,
-          action: 'taken',
-          timestamp: new Date().toISOString()
-        }
-      })
-    }
-  };
-  var result = doPost(testPayload);
-  Logger.log(result.getContent());
+// ===== RUN THIS ONCE TO CLEAN UP =====
+// Go to the function dropdown at top, select "cleanupAllSheets", click Run
+function cleanupAllSheets() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+
+  for (var i = 0; i < sheets.length; i++) {
+    var sheetName = sheets[i].getName();
+    // Skip the default Sheet1
+    if (sheetName === 'Sheet1') continue;
+
+    // Delete the tab — it'll be recreated fresh when new data comes in
+    ss.deleteSheet(sheets[i]);
+  }
+
+  Logger.log('All data tabs cleared. They will be recreated automatically when new entries are logged.');
 }

@@ -995,18 +995,11 @@
   function undoLastDose(id) {
     const data = getData('meds');
     if (data[id] && data[id].length > 0) {
-      const removed = data[id].pop();
+      data[id].pop();
       if (data[id].length === 0) delete data[id];
-      const med = MEDICATIONS.find(m => m.id === id);
-      logToSheet('Medications', {
-        medication: med?.name || id,
-        generic: med?.generic || '',
-        doseNumber: (data[id]?.length || 0) + 1,
-        action: 'undone',
-        timestamp: removed
-      });
     }
     setData('meds', data);
+    // Undos don't log to sheet — only initial dose logging does
     renderMeds();
   }
 
@@ -1057,14 +1050,7 @@
     doses.sort((a, b) => new Date(a) - new Date(b));
     setData('meds', data);
 
-    const med = MEDICATIONS.find(m => m.id === medId);
-    logToSheet('Medications', {
-      medication: med?.name || medId,
-      generic: med?.generic || '',
-      doseNumber: doseIndex + 1,
-      action: 'taken',
-      timestamp: newDate.toISOString()
-    });
+    // Edits don't log to sheet — only initial dose logging does
 
     // Remove overlay
     document.querySelector('div[style*="z-index:10000"]')?.remove();
