@@ -27,7 +27,7 @@
     --shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -35,13 +35,37 @@
     color: var(--text);
     line-height: 1.5;
     padding-bottom: 100px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+    /* Safe area insets for iPhone notch/home bar */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 40px);
+  }
+
+  /* Smooth scrolling */
+  html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+
+  /* Make buttons/inputs feel native — larger touch targets */
+  button, input, textarea, select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+  }
+
+  /* Prevent text selection on interactive elements for app feel */
+  button, .section-header, .check-box, .date-nav button, .spiro-btn {
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /* Header */
   .header {
     background: linear-gradient(135deg, var(--primary), #7C6DD8);
     color: white;
-    padding: 20px 16px 16px;
+    padding: calc(env(safe-area-inset-top, 20px) + 12px) 16px 16px;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -79,32 +103,36 @@
     background: var(--primary-light);
     border: none;
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
     cursor: pointer;
     color: var(--primary);
     font-weight: 700;
+    transition: transform 0.1s;
   }
+  .date-nav button:active { transform: scale(0.9); }
   .date-nav button:disabled { opacity: 0.3; cursor: default; }
   .date-nav .current-date { font-size: 15px; font-weight: 600; min-width: 180px; text-align: center; }
 
   /* Section */
   .section {
-    margin: 12px;
+    margin: 10px 12px;
     background: var(--card);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
+    border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
     overflow: hidden;
   }
   .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 16px;
+    padding: 16px 16px;
     cursor: pointer;
     user-select: none;
+    transition: background 0.15s;
   }
+  .section-header:active { background: rgba(0,0,0,0.03); }
   .section-header h2 {
     font-size: 16px;
     font-weight: 700;
@@ -121,11 +149,11 @@
 
   /* Emergency Banner */
   .emergency {
-    margin: 12px;
+    margin: 10px 12px;
     background: var(--danger-light);
     border: 2px solid var(--danger);
-    border-radius: 12px;
-    padding: 14px 16px;
+    border-radius: 16px;
+    padding: 16px;
   }
   .emergency h3 {
     color: var(--danger);
@@ -146,13 +174,16 @@
     background: var(--danger);
     color: white;
     text-decoration: none;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 12px 20px;
+    border-radius: 12px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
     margin-right: 8px;
     margin-top: 4px;
+    min-height: 44px;
+    transition: transform 0.1s;
   }
+  .emergency a:active { transform: scale(0.96); }
   .emergency .non-urgent {
     font-size: 12px;
     color: var(--text-light);
@@ -203,13 +234,16 @@
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 6px 14px;
-    font-size: 13px;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
+    min-height: 44px;
+    transition: transform 0.1s, opacity 0.1s;
   }
+  .med-dose-btn:active { transform: scale(0.96); opacity: 0.9; }
   .med-dose-btn:disabled {
     background: var(--border);
     color: var(--text-light);
@@ -299,9 +333,9 @@
   }
   .check-item:last-child { border-bottom: none; }
   .check-box {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     border: 2px solid var(--border);
     background: white;
     cursor: pointer;
@@ -309,10 +343,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    transition: all 0.2s;
+    font-size: 16px;
+    transition: all 0.15s;
     margin-top: 1px;
   }
+  .check-box:active { transform: scale(0.9); }
   .check-box.checked {
     background: var(--success);
     border-color: var(--success);
@@ -340,12 +375,13 @@
   }
   .drain-input-group input {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 18px;
     font-family: inherit;
     text-align: center;
+    min-height: 48px;
   }
   .drain-input-group input:focus {
     outline: none;
@@ -379,17 +415,19 @@
   }
   .spiro-label { font-size: 13px; color: var(--text-light); text-align: center; }
   .spiro-btn {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     border: none;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.1s;
   }
+  .spiro-btn:active { transform: scale(0.9); }
   .spiro-btn.add { background: var(--success); color: white; }
   .spiro-btn.sub { background: var(--danger-light); color: var(--danger); }
 
@@ -401,13 +439,14 @@
     padding: 8px 0;
   }
   .temp-input {
-    width: 100px;
-    padding: 10px 12px;
+    width: 110px;
+    padding: 12px 14px;
     border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 18px;
+    border-radius: 10px;
+    font-size: 20px;
     font-family: inherit;
     text-align: center;
+    min-height: 48px;
   }
   .temp-input:focus { outline: none; border-color: var(--primary); }
   .temp-status {
@@ -422,22 +461,25 @@
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 14px;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
+    min-height: 44px;
+    transition: transform 0.1s;
   }
+  .temp-save-btn:active { transform: scale(0.96); }
 
   /* Notes */
   .notes-area {
     width: 100%;
-    min-height: 80px;
-    padding: 10px 12px;
+    min-height: 100px;
+    padding: 12px 14px;
     border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 10px;
+    font-size: 16px;
     font-family: inherit;
     resize: vertical;
   }
@@ -446,15 +488,15 @@
   /* Appointment */
   .appt-card {
     background: var(--primary-light);
-    border-radius: 10px;
-    padding: 14px;
+    border-radius: 14px;
+    padding: 16px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
   }
-  .appt-icon { font-size: 28px; }
-  .appt-info h3 { font-size: 15px; font-weight: 700; color: var(--primary); }
-  .appt-info p { font-size: 13px; color: var(--text-light); }
+  .appt-icon { font-size: 32px; }
+  .appt-info h3 { font-size: 16px; font-weight: 700; color: var(--primary); }
+  .appt-info p { font-size: 14px; color: var(--text-light); }
 
   /* Activity reminders */
   .reminder-card {
@@ -479,25 +521,29 @@
   }
   .q-input {
     flex: 1;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 10px;
+    font-size: 16px;
     font-family: inherit;
+    min-height: 44px;
   }
   .q-input:focus { outline: none; border-color: var(--primary); }
   .q-add-btn {
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 14px;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
     white-space: nowrap;
+    min-height: 44px;
+    transition: transform 0.1s;
   }
+  .q-add-btn:active { transform: scale(0.96); }
   .q-item {
     display: flex;
     align-items: flex-start;
@@ -526,12 +572,17 @@
     border: none;
     color: var(--text-light);
     cursor: pointer;
-    font-size: 16px;
-    padding: 2px 6px;
-    border-radius: 4px;
+    font-size: 20px;
+    padding: 6px 10px;
+    border-radius: 8px;
     flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .q-delete:hover { background: var(--danger-light); color: var(--danger); }
+  .q-delete:active { background: var(--danger-light); color: var(--danger); }
   .q-empty {
     text-align: center;
     color: var(--text-light);
@@ -599,16 +650,19 @@
   .lock-input:focus { outline: none; border-color: var(--primary); }
   .lock-btn {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 16px;
+    border-radius: 12px;
+    font-size: 17px;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
+    min-height: 50px;
+    transition: transform 0.1s;
   }
+  .lock-btn:active { transform: scale(0.97); }
   .lock-error {
     color: var(--danger);
     font-size: 13px;
