@@ -292,12 +292,16 @@
     color: var(--success);
     font-size: 12px;
     font-weight: 600;
-    padding: 3px 10px;
+    padding: 6px 12px;
     border-radius: 12px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    cursor: pointer;
+    min-height: 36px;
+    transition: transform 0.1s, background 0.15s;
   }
+  .med-dose-pill:active { transform: scale(0.95); background: #c8edda; }
   .med-dose-pill .dose-num {
     background: var(--success);
     color: white;
@@ -923,7 +927,7 @@
       } else {
         const pills = doses.map((d, i) => {
           const t = new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-          return `<span class="med-dose-pill"><span class="dose-num">${i + 1}</span>${t}</span>`;
+          return `<span class="med-dose-pill" onclick="editDoseTime('${med.id}', ${i})" title="Tap to edit time"><span class="dose-num">${i + 1}</span>${t} &#9998;</span>`;
         }).join('');
         doseLogInner = `<div class="med-dose-log-entries">${pills}<button class="med-undo" onclick="undoLastDose('${med.id}')">undo last</button></div>`;
       }
@@ -971,6 +975,58 @@
       if (data[id].length === 0) delete data[id];
     }
     setData('meds', data);
+    renderMeds();
+  }
+
+  function editDoseTime(medId, doseIndex) {
+    const data = getData('meds');
+    const doses = data[medId];
+    if (!doses || !doses[doseIndex]) return;
+
+    const oldDate = new Date(doses[doseIndex]);
+    const hh = String(oldDate.getHours()).padStart(2, '0');
+    const mm = String(oldDate.getMinutes()).padStart(2, '0');
+
+    // Create a time picker overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    const medName = MEDICATIONS.find(m => m.id === medId)?.name || medId;
+    overlay.innerHTML = `
+      <div style="background:white;border-radius:16px;padding:24px 20px;width:90%;max-width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px;">Edit Dose Time</div>
+        <div style="font-size:13px;color:var(--text-light);margin-bottom:16px;">${medName} — Dose ${doseIndex + 1}</div>
+        <input type="time" id="editTimeInput" value="${hh}:${mm}" style="font-size:20px;padding:12px 16px;border:2px solid var(--border);border-radius:10px;text-align:center;width:100%;font-family:inherit;min-height:48px;">
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button onclick="this.closest('div[style]').parentElement.remove()" style="flex:1;padding:12px;border:2px solid var(--border);border-radius:10px;background:white;font-size:15px;font-weight:600;font-family:inherit;min-height:44px;cursor:pointer;">Cancel</button>
+          <button onclick="saveDoseEdit('${medId}', ${doseIndex})" style="flex:1;padding:12px;border:none;border-radius:10px;background:var(--primary);color:white;font-size:15px;font-weight:600;font-family:inherit;min-height:44px;cursor:pointer;">Save</button>
+        </div>
+      </div>
+    `;
+    // Close when tapping outside the box
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  }
+
+  function saveDoseEdit(medId, doseIndex) {
+    const timeInput = document.getElementById('editTimeInput');
+    if (!timeInput || !timeInput.value) return;
+
+    const data = getData('meds');
+    const doses = data[medId];
+    if (!doses || !doses[doseIndex]) return;
+
+    const oldDate = new Date(doses[doseIndex]);
+    const [h, m] = timeInput.value.split(':').map(Number);
+    const newDate = new Date(oldDate);
+    newDate.setHours(h, m, 0, 0);
+
+    doses[doseIndex] = newDate.toISOString();
+    // Re-sort doses by time in case order changed
+    doses.sort((a, b) => new Date(a) - new Date(b));
+    setData('meds', data);
+
+    // Remove overlay
+    document.querySelector('div[style*="z-index:10000"]')?.remove();
     renderMeds();
   }
 
