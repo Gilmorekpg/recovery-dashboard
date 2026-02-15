@@ -1324,25 +1324,24 @@
   }
 
   // ===== SYNC TODAY TO SHEET =====
-  function syncTodayToSheet() {
+  async function syncTodayToSheet() {
     if (!SHEET_URL || SHEET_URL === 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
       alert('Google Sheets URL not configured.');
       return;
     }
-    let count = 0;
+
+    // Collect all entries into a queue
+    const queue = [];
 
     // Medications
     const medData = getData('meds');
     MEDICATIONS.forEach(med => {
       const doses = Array.isArray(medData[med.id]) ? medData[med.id] : [];
       doses.forEach((d, i) => {
-        logToSheet('Medications', {
-          medication: med.name,
-          generic: med.generic,
-          doseNumber: i + 1,
-          timestamp: d
-        });
-        count++;
+        queue.push({ type: 'Medications', data: {
+          medication: med.name, generic: med.generic,
+          doseNumber: i + 1, timestamp: d
+        }});
       });
     });
 
@@ -1350,11 +1349,10 @@
     const tempData = getData('temp');
     if (tempData.entries) {
       tempData.entries.forEach(e => {
-        logToSheet('Temperature', {
+        queue.push({ type: 'Temperature', data: {
           reading: e.value,
           status: e.value > 101 ? 'HIGH - Call Doctor' : 'Normal'
-        });
-        count++;
+        }});
       });
     }
 
@@ -1362,8 +1360,7 @@
     const drainData = getData('drain');
     if (drainData.entries) {
       drainData.entries.forEach(e => {
-        logToSheet('Drain Output', { left: e.left, right: e.right });
-        count++;
+        queue.push({ type: 'Drain Output', data: { left: e.left, right: e.right }});
       });
     }
 
@@ -1371,33 +1368,50 @@
     const woundData = getData('wound');
     WOUND_CHECKS.forEach(item => {
       if (woundData[item.id]) {
-        logToSheet('Wound Care', { item: item.label, status: 'checked' });
-        count++;
+        queue.push({ type: 'Wound Care', data: { item: item.label, status: 'checked' }});
       }
     });
 
     // Breathing Exercises
     const spiroData = getData('spiro');
     if (spiroData.count) {
-      logToSheet('Breathing Exercises', { count: spiroData.count });
-      count++;
+      queue.push({ type: 'Breathing Exercises', data: { count: spiroData.count }});
     }
 
     // Notes
     const notesData = getData('notes');
     if (notesData.text && notesData.text.trim()) {
-      logToSheet('Notes', { note: notesData.text });
-      count++;
+      queue.push({ type: 'Notes', data: { note: notesData.text }});
     }
 
     // Questions (global, not per-day)
     const questions = getQuestions();
     questions.forEach(q => {
-      logToSheet('Questions', { question: q, action: 'added' });
-      count++;
+      queue.push({ type: 'Questions', data: { question: q, action: 'added' }});
     });
 
-    alert('Synced ' + count + ' entries to Google Sheets!');
+    if (queue.length === 0) {
+      alert('Nothing to sync for today.');
+      return;
+    }
+
+    // Send one at a time with a delay so Google doesn't drop any
+    let sent = 0;
+    for (const entry of queue) {
+      try {
+        await fetch(SHEET_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(entry)
+        });
+        sent++;
+      } catch (e) { /* skip failed */ }
+      // Wait 500ms between each request
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    alert('Synced ' + sent + ' of ' + queue.length + ' entries to Google Sheets!');
   }
 
   // ===== RESET =====
