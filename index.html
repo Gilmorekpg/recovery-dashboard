@@ -794,6 +794,8 @@
 </div>
 
 <div class="reset-section">
+  <button class="reset-btn" onclick="syncTodayToSheet()" style="background:var(--primary);color:white;border-color:var(--primary);margin-bottom:10px;">Sync Today to Google Sheet</button>
+  <br>
   <button class="reset-btn" onclick="resetDay()">Reset Today's Entries</button>
 </div>
 
@@ -1319,6 +1321,83 @@
   // ===== COLLAPSE =====
   function toggleSection(id) {
     document.getElementById(id).classList.toggle('collapsed');
+  }
+
+  // ===== SYNC TODAY TO SHEET =====
+  function syncTodayToSheet() {
+    if (!SHEET_URL || SHEET_URL === 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+      alert('Google Sheets URL not configured.');
+      return;
+    }
+    let count = 0;
+
+    // Medications
+    const medData = getData('meds');
+    MEDICATIONS.forEach(med => {
+      const doses = Array.isArray(medData[med.id]) ? medData[med.id] : [];
+      doses.forEach((d, i) => {
+        logToSheet('Medications', {
+          medication: med.name,
+          generic: med.generic,
+          doseNumber: i + 1,
+          timestamp: d
+        });
+        count++;
+      });
+    });
+
+    // Temperature
+    const tempData = getData('temp');
+    if (tempData.entries) {
+      tempData.entries.forEach(e => {
+        logToSheet('Temperature', {
+          reading: e.value,
+          status: e.value > 101 ? 'HIGH - Call Doctor' : 'Normal'
+        });
+        count++;
+      });
+    }
+
+    // Drain Output
+    const drainData = getData('drain');
+    if (drainData.entries) {
+      drainData.entries.forEach(e => {
+        logToSheet('Drain Output', { left: e.left, right: e.right });
+        count++;
+      });
+    }
+
+    // Wound Care
+    const woundData = getData('wound');
+    WOUND_CHECKS.forEach(item => {
+      if (woundData[item.id]) {
+        logToSheet('Wound Care', { item: item.label, status: 'checked' });
+        count++;
+      }
+    });
+
+    // Breathing Exercises
+    const spiroData = getData('spiro');
+    if (spiroData.count) {
+      logToSheet('Breathing Exercises', { count: spiroData.count });
+      count++;
+    }
+
+    // Notes
+    const notesData = getData('notes');
+    if (notesData.text && notesData.text.trim()) {
+      logToSheet('Notes', { note: notesData.text });
+      count++;
+    }
+
+    // Questions (global, not per-day)
+    const questions = getQuestions();
+    questions.forEach(q => {
+      logToSheet('Questions', { question: q, action: 'added' });
+      count++;
+    });
+
+    alert('Synced ' + count + ' entries to Google Sheets!');
   }
 
   // ===== RESET =====
